@@ -1,27 +1,34 @@
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+async function sendMessage() {
+  const input = document.getElementById("userInput");
+  const message = input.value.trim();
+  if (!message) return;
 
-  const { message } = req.body;
+  addMessage(message, "user");
+  input.value = "";
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch("/api/chat", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+      "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "user", content: message }
-      ]
-    })
+    body: JSON.stringify({ message })
   });
 
   const data = await response.json();
-
-  res.status(200).json({
-    reply: data.choices[0].message.content
-  });
+  addMessage(data.reply, "bot");
 }
+
+function addMessage(text, sender) {
+  const chatBox = document.getElementById("chatBox");
+  const div = document.createElement("div");
+  div.classList.add("message", sender);
+  div.innerText = text;
+  chatBox.appendChild(div);
+}
+
+// 👇 Enter key support
+document.getElementById("userInput").addEventListener("keypress", function (event) {
+  if (event.key === "Enter") {
+    sendMessage();
+  }
+});
